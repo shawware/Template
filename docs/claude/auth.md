@@ -27,7 +27,7 @@ Login page redirects to `/` when disabled. All auth middleware no-ops; permissio
 
 Restricted to one Workspace domain via `GOOGLE_ALLOWED_DOMAIN` (empty = unrestricted; set it for any internal-only app). `GoogleService::checkDomain()` compares the email's domain and throws a `ValidationException` on mismatch before any user record is touched.
 
-Users from the allowed domain are auto-registered on first login with the app's **default role** (`config('auth.default_role')`, set via `DEFAULT_ROLE` in `.env`) — this is deliberately configurable rather than a hardcoded role name, since LevyWise hardcoded `'owner'` for its own role set and the template has no equivalent built-in role. New auto-registrations get `auto_registered = 1`, `reviewed_at = null`; surface an unreviewed-registrations badge on the admin nav so a superuser notices and reviews them.
+Users from the allowed domain are auto-registered on first login with the app's **default role** (`config('auth.default_role')`, set via `DEFAULT_ROLE` in `.env`) — this is deliberately configurable rather than a hardcoded role name. New auto-registrations get `auto_registered = 1`, `reviewed_at = null`; surface an unreviewed-registrations badge on the admin nav so a superuser notices and reviews them.
 
 `GoogleService::handleCallback()`:
 

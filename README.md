@@ -23,10 +23,6 @@ Or `composer run setup` does all of the above (`composer install`, `.env`, key, 
 
 **`.env` must exist before running tests, even though `phpunit.xml` hardcodes its own test `APP_KEY`.** Without it, `php artisan test` still passes, but every test logs a spurious `file_get_contents(.../.env): Failed to open stream` warning — that's `nunomaduro/collision`'s `TestCommand` trying to read `.env` on every invocation (to know which env vars to clear before delegating to PHPUnit), unrelated to PHPUnit's own config. `cp .env.example .env` (no need to generate a key just for tests) makes the warnings disappear. This isn't checked in — `.env` is gitignored, as it should be — so it's a one-time step after cloning, not something the repo can do for you.
 
-## Where the decisions came from
-
-LevyWise and MYBOS independently converged on the same framework, layering, and deploy model, but diverged on authorization: LevyWise built full RBAC (roles + permissions), MYBOS gated access by Google Workspace domain alone. MYBOS was the simpler of the two apps, so **LevyWise is the reference implementation wherever the two differ** — this template follows its patterns unless noted otherwise.
-
 ## Documents
 
 | File | Covers |
@@ -40,7 +36,7 @@ LevyWise and MYBOS independently converged on the same framework, layering, and 
 
 ## Settled going in
 
-- **PHP 8.5** everywhere — not the `^8.3` pins LevyWise/MYBOS happen to carry.
+- **PHP 8.5** everywhere.
 - **Latest stable** versions of every dependency, rather than matching either app's historical pins.
 - **Full RBAC by default** — `roles` + `role_permissions`, `hasPermission()`, `permission:{key}` middleware.
 - **`AUTH_DISABLED`** env flag ships standard, for local dev and demo sites that need auth bypassed. Must be set to true to disable auth; the default is off.
