@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Verify strict layered architecture: Controllers → Services → Repositories → Models/DB
+# See docs/claude/architecture.md.
+
+cd "$(dirname "$0")/.." || exit 1
+
+PASS=0
+FAIL=0
+
+check() {
+    local label="$1"
+    local result="$2"
+    if [ -z "$result" ]; then
+        echo "  ✓ $label"
+        ((PASS++))
+    else
+        echo "  ✗ $label"
+        echo "$result" | sed 's/^/      /'
+        ((FAIL++))
+    fi
+}
+
+echo ""
+echo "── Controllers ─────────────────────────────────────────────────────────"
+check "No repository imports" \
+    "$(grep -rn "use App\\\\Repositories\\\\" app/Http/Controllers/ 2>/dev/null)"
+check "No model imports" \
+    "$(grep -rn "use App\\\\Models\\\\" app/Http/Controllers/ 2>/dev/null)"
+check "No DB:: calls" \
+    "$(grep -rn "DB::" app/Http/Controllers/ 2>/dev/null)"
+
+echo ""
+echo "── Services ─────────────────────────────────────────────────────────────"
+check "No DB:: calls" \
+    "$(grep -rn "DB::" app/Services/ 2>/dev/null)"
+check "No Eloquent query methods" \
+    "$(grep -rn "::where\|::find\b\|::create\b\|->save()\|::all()\|::first()" app/Services/ 2>/dev/null \
+        | grep -v "DateTimeImmutable")"
+
+echo ""
+echo "── Blade templates ──────────────────────────────────────────────────────"
+check "No DB:: calls" \
+    "$(grep -rn "DB::" resources/views/ 2>/dev/null)"
+check "No Eloquent query methods" \
+    "$(grep -rn "::where\|::find\b\|::create\b\|->save()\|::all()\|::first()" resources/views/ 2>/dev/null)"
+
+echo ""
+echo "── AppServiceProvider bindings ──────────────────────────────────────────"
+interfaces=$(find app/Repositories -name '*RepositoryInterface.php' | \
+    sed 's|app/Repositories/||;s|\.php||' | sort)
+missing=""
+for iface in $interfaces; do
+    if ! grep -q "$iface" app/Providers/AppServiceProvider.php; then
+        missing="$missing\n      $iface"
+    fi
+done
+check "All interfaces bound" "$(printf '%b' "$missing" | sed '/^$/d')"
+
+echo ""
+if [ "$FAIL" -eq 0 ]; then
+    echo "Result: PASS ($PASS checks)"
+else
+    echo "Result: FAIL ($FAIL failed, $PASS passed)"
+fi
+echo ""
