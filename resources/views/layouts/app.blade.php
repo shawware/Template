@@ -73,7 +73,7 @@
 </head>
 <body class="bg-page text-body min-h-screen flex flex-col">
 
-    <nav class="bg-nav text-inverse" x-data="{ mobileOpen: false }">
+    <nav class="bg-nav text-inverse print:hidden" x-data="{ mobileOpen: false }">
         <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
             <a href="/" class="font-semibold text-white">{{ config('app.name') }}</a>
 
@@ -138,13 +138,13 @@
 
     <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
         @if (session('success'))
-            <div class="mb-6 rounded border border-green-200 bg-green-50 text-green-700 px-4 py-3">
+            <div class="mb-6 rounded border border-green-200 bg-green-50 text-green-700 px-4 py-3 print:hidden">
                 {{ session('success') }}
             </div>
         @endif
 
         @if ($errors->any())
-            <div class="mb-6 rounded border border-red-200 bg-red-50 text-red-700 px-4 py-3">
+            <div class="mb-6 rounded border border-red-200 bg-red-50 text-red-700 px-4 py-3 print:hidden">
                 <ul class="list-disc list-inside">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -156,7 +156,7 @@
         @yield('content')
     </main>
 
-    <footer class="bg-nav text-inverse text-xs">
+    <footer class="bg-nav text-inverse text-xs print:hidden">
         <div class="max-w-6xl mx-auto px-4 py-2 sm:h-10 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-0 text-center sm:text-left">
             <span>{{ config('app.name') }}</span>
             <span>{{ app()->environment() }} · {{ config('app.version') }}</span>

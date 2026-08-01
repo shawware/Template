@@ -32,6 +32,10 @@ Mobile-first, using Tailwind's default breakpoints (`sm` 640px and up covers des
 - **Multi-column forms**: use `grid-cols-1 sm:grid-cols-2` (or similar) rather than a fixed `grid-cols-N`, so fields stack on narrow screens.
 - **Page titles**: every page's `<h1>` uses `text-heading text-xl font-semibold` — keep this consistent so heading hierarchy doesn't drift as pages are added. Sub-section `<h2>`s within a page use `text-lg font-semibold`.
 
+## Printing
+
+Browser-native printing (Cmd/Ctrl+P) only — no in-app "Print" button. Layout chrome that has no value on paper (nav, footer, flash success/error banners) is hidden with Tailwind's built-in `print:hidden` variant, applied directly in `layouts/app.blade.php`. This compiles to a plain `@media print { display: none }` rule — no custom `<style>` block or `tailwind.config` change needed. Page content (cards, tables, forms) prints as-is; no per-page changes are needed for this.
+
 ## General UI Rules
 
 - Keep it simple
