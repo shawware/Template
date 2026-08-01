@@ -6,8 +6,9 @@
 <div class="space-y-6">
     <div class="bg-surface border border-edge rounded-lg shadow-sm overflow-hidden">
         <div class="bg-muted px-4 py-3 border-b border-edge">
-            <h1 class="text-heading font-semibold">Roles</h1>
+            <h1 class="text-heading text-xl font-semibold">Roles</h1>
         </div>
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-muted text-label text-left">
                 <tr>
@@ -34,7 +35,7 @@
                                       onsubmit="return confirm('Delete this role?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
+                                    <button type="submit" class="text-red-700 hover:text-red-800">Delete</button>
                                 </form>
                             @endunless
                         </td>
@@ -42,13 +43,14 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="bg-surface border border-edge rounded-lg shadow-sm p-6">
         <h2 class="text-heading font-semibold mb-4">New role</h2>
         <form method="POST" action="{{ url('/admin/roles') }}" class="space-y-4">
             @csrf
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="name" class="block text-label text-sm mb-1">Key (lowercase, no spaces)</label>
                     <input id="name" name="name" type="text" required pattern="[a-z0-9_]+"

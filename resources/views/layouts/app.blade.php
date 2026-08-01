@@ -73,12 +73,12 @@
 </head>
 <body class="bg-page text-body min-h-screen flex flex-col">
 
-    <nav class="bg-nav text-inverse">
+    <nav class="bg-nav text-inverse" x-data="{ mobileOpen: false }">
         <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
             <a href="/" class="font-semibold text-white">{{ config('app.name') }}</a>
 
             @auth
-                <div class="flex items-center gap-4 text-sm">
+                <div class="hidden sm:flex items-center gap-4 text-sm">
                     @if ($canSee('admin.users') || $canSee('admin.roles') || $canSee('audit.view'))
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" @click.outside="open = false" class="hover:bg-nav-hover px-3 py-2 rounded">
@@ -103,8 +103,37 @@
                         <button type="submit" class="hover:bg-nav-hover px-3 py-2 rounded">Log out</button>
                     </form>
                 </div>
+
+                <button @click="mobileOpen = !mobileOpen" class="sm:hidden p-2 -mr-2 rounded hover:bg-nav-hover" aria-label="Toggle menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path x-show="mobileOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             @endauth
         </div>
+
+        @auth
+            <div x-show="mobileOpen" x-cloak @click.outside="mobileOpen = false" class="sm:hidden border-t border-nav-hover px-4 py-3 space-y-1 text-sm">
+                @if ($canSee('admin.users') || $canSee('admin.roles') || $canSee('audit.view'))
+                    @if ($canSee('admin.users'))
+                        <a href="{{ url('/admin/users') }}" class="block px-3 py-2 rounded hover:bg-nav-hover">Users</a>
+                    @endif
+                    @if ($canSee('admin.roles'))
+                        <a href="{{ url('/admin/roles') }}" class="block px-3 py-2 rounded hover:bg-nav-hover">Roles</a>
+                    @endif
+                    @if ($canSee('audit.view'))
+                        <a href="{{ url('/admin/audit') }}" class="block px-3 py-2 rounded hover:bg-nav-hover">Audit log</a>
+                    @endif
+                    <div class="border-t border-nav-hover my-1"></div>
+                @endif
+                <a href="{{ url('/profile') }}" class="block px-3 py-2 rounded hover:bg-nav-hover">{{ auth()->user()->initials() }}</a>
+                <form method="POST" action="{{ url('/user/logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full text-left px-3 py-2 rounded hover:bg-nav-hover">Log out</button>
+                </form>
+            </div>
+        @endauth
     </nav>
 
     <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
@@ -128,7 +157,7 @@
     </main>
 
     <footer class="bg-nav text-inverse text-xs">
-        <div class="max-w-6xl mx-auto px-4 h-10 flex items-center justify-between">
+        <div class="max-w-6xl mx-auto px-4 py-2 sm:h-10 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-0 text-center sm:text-left">
             <span>{{ config('app.name') }}</span>
             <span>{{ app()->environment() }} · {{ config('app.version') }}</span>
             <span>&copy; {{ date('Y') }}</span>

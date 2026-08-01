@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-lg space-y-6">
     <div class="bg-surface border border-edge rounded-lg shadow-sm p-6">
-        <h1 class="text-heading text-lg font-semibold mb-4">Profile</h1>
+        <h1 class="text-heading text-xl font-semibold mb-4">Profile</h1>
         <form method="POST" action="{{ url('/profile') }}" class="space-y-4">
             @csrf
             @method('PATCH')

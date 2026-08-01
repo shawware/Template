@@ -5,8 +5,9 @@
 @section('content')
 <div class="bg-surface border border-edge rounded-lg shadow-sm overflow-hidden">
     <div class="bg-muted px-4 py-3 border-b border-edge">
-        <h1 class="text-heading font-semibold">Users</h1>
+        <h1 class="text-heading text-xl font-semibold">Users</h1>
     </div>
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-muted text-label text-left">
             <tr>
@@ -67,6 +68,7 @@
             @endforeach
         </tbody>
     </table>
+    </div>
     <div class="px-4 py-3 border-t border-edge">
         {{ $users->links() }}
     </div>

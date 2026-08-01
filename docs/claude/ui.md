@@ -22,6 +22,16 @@ function myComponent(data) {
 <div x-data="myComponent(@js($phpData))">
 ```
 
+## Responsive Design
+
+Mobile-first, using Tailwind's default breakpoints (`sm` 640px and up covers desktop nav; nothing below `sm` needs a custom breakpoint at this scale). No `screens` customization in the CDN `tailwind.config` — the defaults are sufficient.
+
+- **Nav**: the desktop link row is `hidden sm:flex`; a hamburger button (`sm:hidden`) toggles a mobile panel via a top-level `x-data="{ mobileOpen: false }"` on `<nav>`, following the same `x-show` / `x-cloak` / `@click.outside` idiom as the existing Admin dropdown. Any new top-level nav link needs adding to both the desktop row and the mobile panel in `layouts/app.blade.php`.
+- **Footer**: `flex-col sm:flex-row` so multi-item rows stack on narrow screens instead of clipping.
+- **Tables**: wrap every `<table>` in its own `<div class="overflow-x-auto">` (inside the card's outer `overflow-hidden` wrapper) so wide tables scroll horizontally on narrow screens rather than being clipped. Apply this to any new admin/data table.
+- **Multi-column forms**: use `grid-cols-1 sm:grid-cols-2` (or similar) rather than a fixed `grid-cols-N`, so fields stack on narrow screens.
+- **Page titles**: every page's `<h1>` uses `text-heading text-xl font-semibold` — keep this consistent so heading hierarchy doesn't drift as pages are added. Sub-section `<h2>`s within a page use `text-lg font-semibold`.
+
 ## General UI Rules
 
 - Keep it simple
