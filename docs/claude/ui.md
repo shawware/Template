@@ -47,7 +47,18 @@ Browser-native printing (Cmd/Ctrl+P) only — no in-app "Print" button. Layout c
 
 The UI supports switchable colour themes via CSS custom properties. **Never use raw Tailwind colour classes** (`text-gray-700`, `bg-indigo-600`, etc.) in templates — always the semantic token classes below. This is what makes adding a second theme later a CSS-variable change instead of a template rewrite.
 
-Themes are CSS variable blocks defined in `layouts/app.blade.php`; the Tailwind CDN config maps token names to those variables. The active theme class is set on `<html>` by an inline script reading `localStorage`. Ship one theme (`theme-default`) to start — the token layer is the investment, not the theme count.
+Themes are CSS variable blocks defined in `layouts/app.blade.php`, one per theme class (`.theme-default`, `.theme-ocean`, …). The Tailwind CDN config maps token names to those variables once, regardless of how many themes exist. The template ships two — `theme-default` and a second reference theme, `theme-ocean` — to prove the token layer actually reskins the app with a CSS-only change; the token layer is the investment, not the theme count, so treat `theme-ocean`'s values as a copyable example rather than a fixed pair.
+
+### Adding a theme
+
+1. Copy an existing theme's variable block in the `<style>` tag and give it a new class name (`.theme-<name>`) — no `tailwind.config` change needed, since the config already maps token names to `var(--color-*)` and doesn't know how many blocks define those variables.
+2. Add a button for it wherever the switcher lives (see below), calling `setTheme('theme-<name>')`.
+
+### Switching themes
+
+- `setTheme(name)` (defined once, at the end of `<body>` in `layouts/app.blade.php`) sets `document.documentElement.className = name` and persists the choice via `localStorage.setItem('theme', name)`.
+- An inline script in `<head>`, run before Tailwind/Alpine load, sets `document.documentElement.className` from `localStorage.getItem('theme')` (falling back to `theme-default`) so the correct theme applies before first paint — without it, the page would flash the default theme and then jump to the stored one.
+- The switcher itself is a small Alpine dropdown (swatch + label per theme) — one instance in the desktop nav, one in the mobile panel, both calling the same `setTheme()`. Follow the existing Admin-dropdown `x-data="{ open: false }"` idiom when adding one to a new nav.
 
 ### Semantic Token Reference
 

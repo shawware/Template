@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="theme-default">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name') }} — @yield('title', 'Home')</title>
+
+    {{-- Apply the stored theme before first paint, to avoid a flash of the default theme. --}}
+    <script>
+        document.documentElement.className = localStorage.getItem('theme') || 'theme-default';
+    </script>
 
     {{-- CDN-only Tailwind + Alpine — no build step. See docs/claude/ui.md. --}}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +16,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        :root {
+        {{-- Each theme is a self-contained CSS variable block, keyed by the class set on <html>.
+             Adding a theme is a copy of this block with new values — no template changes. See docs/claude/ui.md. --}}
+        .theme-default {
             --color-bg-page: #f9fafb;
             --color-bg-surface: #ffffff;
             --color-bg-muted: #f3f4f6;
@@ -35,6 +42,32 @@
             --color-border-highlight: #e0e7ff;
             --color-bg-badge: #e0e7ff;
             --color-text-badge-fg: #3730a3;
+        }
+
+        .theme-ocean {
+            --color-bg-page: #f9fafb;
+            --color-bg-surface: #ffffff;
+            --color-bg-muted: #f0f9ff;
+            --color-bg-nav: #164e63;
+            --color-bg-nav-hover: #155e75;
+            --color-text-heading: #0c4a6e;
+            --color-text-body: #164e63;
+            --color-text-secondary: #0e7490;
+            --color-text-label: #0891b2;
+            --color-text-subtle: #67e8f9;
+            --color-text-inverse: #cffafe;
+            --color-border-edge: #bae6fd;
+            --color-border-divider: #e0f2fe;
+            --color-border-separator: #7dd3fc;
+            --color-text-action: #0891b2;
+            --color-text-action-hover: #155e75;
+            --color-bg-btn: #0891b2;
+            --color-bg-btn-hover: #0e7490;
+            --color-focus-ring: #22d3ee;
+            --color-bg-highlight: #ecfeff;
+            --color-border-highlight: #cffafe;
+            --color-bg-badge: #cffafe;
+            --color-text-badge-fg: #0e7490;
         }
     </style>
     <script>
@@ -97,6 +130,22 @@
                             </div>
                         </div>
                     @endif
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.outside="open = false" class="hover:bg-nav-hover px-3 py-2 rounded" title="Switch colour theme" aria-label="Switch colour theme">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.02 12.02.707.707M3 12h1m16 0h1M4.927 19.073l.707-.707M18.364 5.636l.707-.707" />
+                                <circle cx="12" cy="12" r="4" stroke-linecap="round" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-cloak class="absolute right-0 mt-1 w-32 bg-surface text-body border border-edge rounded shadow-lg py-1 z-10">
+                            <button type="button" @click="setTheme('theme-default'); open = false" class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-muted">
+                                <span class="w-3 h-3 rounded-full bg-indigo-500 shrink-0"></span> Default
+                            </button>
+                            <button type="button" @click="setTheme('theme-ocean'); open = false" class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-muted">
+                                <span class="w-3 h-3 rounded-full bg-cyan-500 shrink-0"></span> Ocean
+                            </button>
+                        </div>
+                    </div>
                     <a href="{{ url('/profile') }}" class="hover:bg-nav-hover px-3 py-2 rounded">{{ auth()->user()->initials() }}</a>
                     <form method="POST" action="{{ url('/user/logout') }}">
                         @csrf
@@ -132,6 +181,16 @@
                     @csrf
                     <button type="submit" class="w-full text-left px-3 py-2 rounded hover:bg-nav-hover">Log out</button>
                 </form>
+                <div class="border-t border-nav-hover my-1"></div>
+                <p class="px-3 pt-1 pb-1 text-xs uppercase tracking-wide text-inverse">Colour theme</p>
+                <div class="grid grid-cols-2 gap-1 px-1">
+                    <button type="button" @click="setTheme('theme-default')" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-nav-hover text-sm">
+                        <span class="w-3 h-3 rounded-full bg-indigo-500 shrink-0"></span> Default
+                    </button>
+                    <button type="button" @click="setTheme('theme-ocean')" class="flex items-center gap-2 px-3 py-2 rounded hover:bg-nav-hover text-sm">
+                        <span class="w-3 h-3 rounded-full bg-cyan-500 shrink-0"></span> Ocean
+                    </button>
+                </div>
             </div>
         @endauth
     </nav>
@@ -163,6 +222,13 @@
             <span>&copy; {{ date('Y') }}</span>
         </div>
     </footer>
+
+    <script>
+        function setTheme(name) {
+            document.documentElement.className = name;
+            localStorage.setItem('theme', name);
+        }
+    </script>
 
 </body>
 </html>
