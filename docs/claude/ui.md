@@ -22,6 +22,22 @@ function myComponent(data) {
 <div x-data="myComponent(@js($phpData))">
 ```
 
+## CSRF
+
+Laravel's `VerifyCsrfToken` middleware (part of the `web` middleware group) protects every POST/PUT/PATCH/DELETE route by default — this is already active, not something that needs switching on as the app grows. Standard Blade `<form>`s just need `@csrf` inside them.
+
+The gap is Alpine components that make their own `fetch`/`axios` call instead of submitting a form — Blade's `@csrf` directive doesn't cover those. Read the token from the `<meta name="csrf-token" content="{{ csrf_token() }}">` tag in `layouts/app.blade.php` and send it as the `X-CSRF-TOKEN` header:
+
+```js
+fetch('/some/endpoint', {
+    method: 'POST',
+    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+    body: JSON.stringify(data),
+});
+```
+
+Routes on `web.php` inherit CSRF protection automatically, so this only needs handling as forms/AJAX calls are added — no action needed per-route. The one exception is inbound webhooks (a third-party service, e.g. Stripe, POSTing to this app with no session or token to present) — those need an explicit CSRF exemption via `except` in `bootstrap/app.php`'s `validateCsrfTokens()` config. The template doesn't ship any webhook routes; add the exemption when the first one is built, scoped to that specific route.
+
 ## Responsive Design
 
 Mobile-first, using Tailwind's default breakpoints (`sm` 640px and up covers desktop nav; nothing below `sm` needs a custom breakpoint at this scale). No `screens` customization in the CDN `tailwind.config` — the defaults are sufficient.
