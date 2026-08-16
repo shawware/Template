@@ -1,50 +1,50 @@
 # Testing
 
-PHPUnit, with Mockery for repository mocks and Faker for fixture data. Unit tests never hit a real database — that's what the Repository layer and Mockery are for (see `@docs/claude/architecture.md`).
+The template uses PHPUnit, with Mockery for repository mocks and Faker for fixture data. Unit tests never hit a real database. That is what the Repository layer and Mockery are for; see `@docs/claude/architecture.md`.
 
-**Run `cp .env.example .env` before running tests, even locally with no real credentials needed.** `phpunit.xml` hardcodes its own test `APP_KEY` so the suite doesn't need a generated one, but Laravel's `artisan test` command (via `nunomaduro/collision`) still tries to read `.env` on every invocation regardless of PHPUnit's own config. Without it, tests still pass but log a spurious `file_get_contents(.../.env)` warning per test. See the README's Local Setup section.
+**Run `cp .env.example .env` before you run tests, even locally with no real credentials needed.** `phpunit.xml` hardcodes its own test `APP_KEY`, so the suite does not need a generated one. But Laravel's `artisan test` command, through `nunomaduro/collision`, still tries to read `.env` on every invocation, regardless of PHPUnit's own config. Without `.env`, tests still pass, but each test logs a spurious `file_get_contents(.../.env)` warning. See the README's Local Setup section.
 
 ## New Code → New Tests
 
-Every new public service method and every new controller action needs tests before the work is considered done. This applies to both happy paths and rejection/error paths — a service method that only has a happy-path test hasn't been tested, it's been demoed.
+Every new public service method, and every new controller action, needs tests before you consider the work done. This applies to both happy paths and rejection or error paths. A service method with only a happy-path test has not been tested; it has been demoed.
 
 ## Feature Test Coverage Checklist
 
-For each controller action:
+For each controller action, test:
 
-- The happy path (valid input, correct redirect/response — `assertSessionHas('success')` for redirecting actions)
-- Each required field missing (`assertSessionHasErrors`)
-- Invalid enum values (`assertSessionHasErrors`)
-- Wrong type for FK fields, e.g. non-integer (`assertSessionHasErrors`) — but not invalid ID *values*, which are tested at the service layer instead (see Validation Rules below)
-- Duplicate values where uniqueness matters (`assertSessionHasErrors` or `assertUnprocessable`)
-- File upload validation (wrong MIME type, missing file) where a file input exists
-- Blocked operations where the service may reject (e.g. delete blocked because dependents exist)
+- The happy path: valid input, and the correct redirect or response. Use `assertSessionHas('success')` for redirecting actions.
+- Each required field, missing in turn. Use `assertSessionHasErrors`.
+- Invalid enum values. Use `assertSessionHasErrors`.
+- The wrong type for FK fields, for example a non-integer value. Use `assertSessionHasErrors`. Do not test invalid ID *values* here; test those at the service layer instead. See Validation Rules below.
+- Duplicate values, where uniqueness matters. Use `assertSessionHasErrors` or `assertUnprocessable`.
+- File upload validation, such as the wrong MIME type or a missing file, where a file input exists.
+- Blocked operations, where the service may reject the request, for example a delete blocked because dependents exist.
 
 ## Service Unit Test Checklist
 
-For each service method:
+For each service method, test:
 
-- Every `throw ValidationException` path has a corresponding test, including partial/boundary cases — not just the fully-invalid case
-- Boolean flags forwarded to repositories are argument-verified via Mockery `->with(...)` constraints, not just call-count
-- Data payloads passed to `create`/`update`/`upsert` repository calls assert the specific fields that matter for business correctness (`withArgs` or `andReturnUsing` capture) — not just that the method was called
-- Derived values (computed dates, totals, financial-year-style rollups) are verified as reaching the repository correctly, not just that the repo method was called once
-- When a test relies on Mockery expectations alone (no `$this->assert*` calls), use `->once()` or `->times()` so Mockery verifies the call count — otherwise PHPUnit marks the test risky, and the assertion is implicit rather than explicit
+- Every `throw ValidationException` path, including partial and boundary cases, not just the fully-invalid case.
+- Boolean flags that get forwarded to repositories. Verify these with Mockery `->with(...)` constraints, not just a call count.
+- Data payloads passed to `create`, `update`, or `upsert` repository calls. Assert the specific fields that matter for business correctness, using `withArgs` or `andReturnUsing` to capture them. Do not just assert that the method was called.
+- Derived values, such as computed dates, totals, or financial-year-style rollups. Verify that these reach the repository correctly, not just that the repo method was called once.
+- Tests that rely on Mockery expectations alone, with no `$this->assert*` calls. Use `->once()` or `->times()` on these, so Mockery verifies the call count. Otherwise, PHPUnit marks the test risky, since the assertion stays implicit rather than explicit.
 
 ## Validation Rules
 
 Controller `$request->validate()` rules must cover:
 
-- **Enum fields** — always `in:value1,value2,...`
-- **FK fields** — `integer` (or `string`) to reject the wrong *type*; do **not** use `exists:table,id`
-- **Uniqueness** — do **not** use `Rule::unique` in controllers
+- **Enum fields**: always use `in:value1,value2,...`.
+- **FK fields**: use `integer` or `string` to reject the wrong *type*. Do **not** use `exists:table,id`.
+- **Uniqueness**: do **not** use `Rule::unique` in controllers.
 
-**Why not `exists:table,id` or `Rule::unique`:** both run direct database queries that bypass the Repository layer, which breaks the mock-based feature test pattern — the validator hits a real database that doesn't exist in a unit-test context. Enforce these at the service layer instead:
+**Why not `exists:table,id` or `Rule::unique`:** both run direct database queries. These queries bypass the Repository layer, which breaks the mock-based feature test pattern. The validator would hit a real database, and no real database exists in a unit-test context. Enforce these checks at the service layer instead:
 
-- **FK existence**: the service checks the record exists when it fetches it (e.g. a `find...()` repository call returning `null`) and throws `ValidationException::withMessages([...])` if not
-- **Uniqueness**: add a `nameExists...()` (or equivalent) method to the relevant repository interface and Eloquent implementation, check it in the service method, and throw `ValidationException::withMessages([...])` on a duplicate
+- **FK existence**: have the service check that the record exists when it fetches it, for example when a `find...()` repository call returns `null`. Throw `ValidationException::withMessages([...])` if the record does not exist.
+- **Uniqueness**: add a `nameExists...()` method, or an equivalent, to the relevant repository interface and its Eloquent implementation. Check it in the service method, and throw `ValidationException::withMessages([...])` on a duplicate.
 
-This keeps every check mockable and consistent with the layered architecture — a controller test never needs a real database to exercise a validation failure.
+This approach keeps every check mockable, and consistent with the layered architecture. A controller test never needs a real database to exercise a validation failure.
 
 ## Layering Enforcement
 
-Run `bin/check-layers` as part of the "done" checklist for any change touching controllers, services, or repositories — see `@docs/claude/architecture.md`. It's a local script, not a CI job (shared hosting has no CI), so it only catches drift if it's actually run.
+Run `bin/check-layers` as part of the "done" checklist, for any change that touches controllers, services, or repositories. See `@docs/claude/architecture.md`. This script is a local script, not a CI job, since shared hosting has no CI. It only catches drift if you actually run it.

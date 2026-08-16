@@ -2,7 +2,7 @@
 
 ## Application Layers
 
-The codebase is structured in strict layers. Each layer may only depend on the layer directly below it.
+The codebase uses strict layers. Each layer can depend only on the layer directly below it.
 
 ```text
 Controllers  →  Services  →  Repositories  →  Models / DB
@@ -10,23 +10,23 @@ Controllers  →  Services  →  Repositories  →  Models / DB
 
 **Rules:**
 
-- Controllers inject Services only — never repositories or models directly
-- Services inject Repositories only — never models or DB facades directly
-- Repositories contain all Eloquent and DB facade calls; no business logic
-- Services contain all business logic; no Eloquent or DB calls
+- Controllers inject Services only. They never inject repositories or models directly.
+- Services inject Repositories only. They never inject models, and never call the DB facade directly.
+- Repositories hold all Eloquent and DB facade calls. They hold no business logic.
+- Services hold all business logic. They make no Eloquent or DB calls.
 
 **Locations:**
 
-- `app/Http/Controllers/` — HTTP layer; validate input, call service, return response
-- `app/Services/` — business logic and orchestration
-- `app/Repositories/` — data access; one interface + one Eloquent implementation per model group
-- `app/Models/` — Eloquent model definitions only
+- `app/Http/Controllers/`: the HTTP layer. Controllers validate input, call a service, and return a response.
+- `app/Services/`: business logic and orchestration.
+- `app/Repositories/`: data access. Each model group has one interface and one Eloquent implementation.
+- `app/Models/`: Eloquent model definitions only.
 
 **Dependency injection:**
 
-- All repository interfaces are bound to their Eloquent implementations in `AppServiceProvider::register()`
-- Laravel's container resolves dependencies automatically via constructor type-hints
-- In unit tests, repository interfaces are mocked (Mockery) — no database required
+- `AppServiceProvider::register()` binds every repository interface to its Eloquent implementation.
+- Laravel's container resolves dependencies automatically, using constructor type-hints.
+- Unit tests mock repository interfaces with Mockery. They do not need a database.
 
 **Repositories the template ships with:**
 
@@ -35,38 +35,38 @@ Controllers  →  Services  →  Repositories  →  Models / DB
 - `UserLoginRepositoryInterface` → `EloquentUserLoginRepository`
 - `AuditLogRepositoryInterface` → `EloquentAuditLogRepository`
 
-Every app-specific model group gets its own interface + Eloquent pair, bound the same way, added to the list above in that app's own copy of this doc.
+Every app-specific model group gets its own interface and Eloquent pair. Bind each pair the same way. Add each pair to the list above, in that app's own copy of this document.
 
 ## Other Directories
 
-**`app/Console/Commands/`** — artisan commands (`CreateSuperuser`, one-off admin/maintenance commands). A command is a thin entry point, the same way a controller is: it parses input (arguments/options/prompts) and calls a Service — it doesn't contain business logic itself. `bin/check-layers` doesn't currently scan `app/Console/`, so this is enforced by discipline, not tooling; a command with real logic in its `handle()` method is a sign that logic belongs in a Service instead, where it's testable and reusable from the web side too. Dev-only commands (not meant to ship, or only useful locally) live under `app/Console/Commands/Dev/`.
+**`app/Console/Commands/`**: artisan commands, such as `CreateSuperuser` and one-off admin or maintenance commands. A command is a thin entry point, in the same way a controller is. It parses input, such as arguments, options, or prompts, and calls a Service. It does not contain business logic itself. `bin/check-layers` does not currently scan `app/Console/`. This rule is enforced by discipline, not tooling. If a command's `handle()` method contains real logic, that logic belongs in a Service instead. A Service is testable, and reusable from the web side too. Commands that are dev-only, either because they should not ship or because they are only useful locally, live under `app/Console/Commands/Dev/`.
 
-**`routes/console.php`** — closure-based commands (`Artisan::command(...)`) and the schedule. Shared hosting has no persistent worker process and typically only one usable cron slot, so the pattern is: a single crontab entry runs `php artisan schedule:run` every minute, and everything else — draining the queue, periodic sync jobs — is registered here as scheduled tasks rather than as separate crontab lines or a long-running `queue:work`:
+**`routes/console.php`**: closure-based commands, defined with `Artisan::command(...)`, and the schedule. Shared hosting has no persistent worker process. It typically has only one usable cron slot. The pattern is this: a single crontab entry runs `php artisan schedule:run` every minute. Everything else — draining the queue, and periodic sync jobs — is registered here as a scheduled task. Do not add these as separate crontab lines, and do not run a long-running `queue:work` process.
 
 ```php
 Schedule::command('queue:work --stop-when-empty')->everyMinute()->withoutOverlapping();
 Schedule::command('app:sync-something')->daily()->withoutOverlapping();
 ```
 
-**`database/migrations/`** — one timestamped file per schema change. The template ships the auth migrations (`users`, `roles`, `role_permissions`, `user_logins`, `audit_log`); app-specific tables are added the same way as features are built, never by editing an already-deployed migration.
+**`database/migrations/`**: one timestamped file per schema change. The template ships the auth migrations: `users`, `roles`, `role_permissions`, `user_logins`, and `audit_log`. Add app-specific tables the same way, as you build each feature. Never edit a migration that has already been deployed.
 
-**`database/seeders/`** — `DatabaseSeeder.php` is the entry point (`php artisan db:seed`). `RolesSeeder` seeds the built-in `superuser` role; app-specific seeders (additional roles, reference/lookup data) are added alongside it and registered in `DatabaseSeeder::run()`. Seeders should be idempotent (`updateOrCreate`, not `create`) so re-running one in production doesn't duplicate rows.
+**`database/seeders/`**: `DatabaseSeeder.php` is the entry point, run with `php artisan db:seed`. `RolesSeeder` seeds the built-in `superuser` role. Add app-specific seeders alongside it, for example additional roles or reference and lookup data, and register each one in `DatabaseSeeder::run()`. Write seeders to be idempotent, using `updateOrCreate` rather than `create`. This way, re-running a seeder in production does not duplicate rows.
 
-**`database/factories/`** — Eloquent model factories for tests and local fixture data. Keep these separate from seeders in purpose: factories generate throwaway/random data for tests and `db:seed --class=...` demo runs; seeders own deterministic, meaningful production data (roles, permissions, reference tables).
+**`database/factories/`**: Eloquent model factories, for tests and for local fixture data. Keep these separate from seeders. Factories generate throwaway or random data, for tests and for `db:seed --class=...` demo runs. Seeders own deterministic, meaningful production data, such as roles, permissions, and reference tables.
 
 ## Enforcement
 
-`bin/check-layers` is a grep-based script that verifies the rules above aren't violated:
+`bin/check-layers` is a grep-based script. It verifies that the rules above are not broken:
 
-- Controllers contain no `use App\Repositories\...` imports, no `use App\Models\...` imports, no `DB::` calls
-- Services contain no `DB::` calls and no direct Eloquent query methods (`::where`, `::find`, `::create`, `->save()`, `::all()`, `::first()`)
-- Blade templates contain no `DB::` calls or Eloquent query methods
-- Every `RepositoryInterface` under `app/Repositories/` has a matching binding in `AppServiceProvider`
+- Controllers contain no `use App\Repositories\...` imports, no `use App\Models\...` imports, and no `DB::` calls.
+- Services contain no `DB::` calls, and no direct Eloquent query methods, such as `::where`, `::find`, `::create`, `->save()`, `::all()`, or `::first()`.
+- Blade templates contain no `DB::` calls or Eloquent query methods.
+- Every `RepositoryInterface` under `app/Repositories/` has a matching binding in `AppServiceProvider`.
 
-Run it before considering a change done. It's a shell script, not a CI job — shared hosting has no CI, so this is the substitute: fast enough to run on every save, cheap enough that there's no excuse not to.
+Run this script before you consider a change done. It is a shell script, not a CI job. Shared hosting has no CI, so this script is the substitute. It is fast enough to run on every save, and cheap enough that there is no excuse to skip it.
 
-When an app accumulates its own renamed/retired classes, add a project-specific "stale reference" check to `bin/check-layers` (a grep for old class names, scoped to `app/`, `routes/`, `tests/`) — it isn't part of the shared template because it's app-specific by nature, but the pattern is worth repeating.
+When an app builds up its own renamed or retired classes, add a project-specific "stale reference" check to `bin/check-layers`. This check is a grep for old class names, scoped to `app/`, `routes/`, and `tests/`. It is not part of the shared template, because it is app-specific by nature. The pattern is still worth repeating in each app.
 
 ## Testing
 
-See `@docs/claude/testing.md` for the full testing conventions (coverage checklists, validation rules, mocking patterns). The short version: PHPUnit, Mockery for repository mocks, no database required for unit tests, and new code doesn't count as done without tests.
+See `@docs/claude/testing.md` for the full testing conventions: coverage checklists, validation rules, and mocking patterns. In short: use PHPUnit, use Mockery for repository mocks, unit tests need no database, and new code is not done until it has tests.
