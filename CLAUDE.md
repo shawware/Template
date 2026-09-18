@@ -80,3 +80,4 @@ Authentication is session-based, using the Laravel web guard. Users can log in w
 @docs/claude/auth.md
 @docs/claude/deployment.md
 @docs/claude/testing.md
+@docs/claude/ci.md

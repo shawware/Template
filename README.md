@@ -4,7 +4,7 @@ This is a Laravel starter for apps that are deployed to shared hosting. The targ
 
 ## Status
 
-The template is scaffolded and verified. It is a real Laravel 13.8 / PHP 8.5 app. It implements everything in `docs/claude/`: RBAC, Google OAuth, `AUTH_DISABLED`, audit logging, the layering rules with `bin/check-layers`, a CDN-only frontend, deploy scripts, and a passing PHPUnit suite. If you are new here, read the docs first. The code was built to match the docs. The docs are not just background material.
+The template is scaffolded and verified. It is a real Laravel 13.8 / PHP 8.5 app. It implements everything in `docs/claude/`: RBAC, Google OAuth, `AUTH_DISABLED`, audit logging, the layering rules with `bin/check-layers`, a CDN-only frontend, deploy scripts, a passing PHPUnit suite, and a GitHub Actions CI workflow covering tests, layering, style, and security. If you are new here, read the docs first. The code was built to match the docs. The docs are not just background material.
 
 ## Local setup
 
@@ -27,11 +27,10 @@ Or run `composer run setup`. This one command does all of the steps above: `comp
 
 Dependabot is configured in `.github/dependabot.yml`. It watches Composer dependencies weekly. It groups minor and patch bumps into one PR. It opens major bumps as separate PRs, so they stand out for review. There is no equivalent npm/Node surface to watch. That is a direct payoff of not carrying a build step.
 
-Patch and minor Dependabot PRs are generally safe to merge once CI is green, or once a local `composer test` and `bin/check-layers` both pass. A **major** version bump — Laravel 13 to 14, PHP 8.5 to 8.6, and similar — deserves a deliberate pass. Do not just click merge.
+Patch and minor Dependabot PRs are generally safe to merge once CI is green. CI (see [`docs/claude/ci.md`](docs/claude/ci.md)) runs the full check a manual review would otherwise repeat by hand: tests, layering rules, style, taint analysis, and `composer audit`. A **major** version bump — Laravel 13 to 14, PHP 8.5 to 8.6, and similar — deserves a deliberate pass. Do not just click merge.
 
 1. Read the upgrade guide for what changed.
-2. Bump the version. Then run the full verification: `php artisan migrate:fresh --seed`, `php artisan test`, `bin/check-layers`, and a manual smoke test. The smoke test should cover login, a permission-gated admin page, and `AUTH_DISABLED`.
-3. Run `composer audit` while you are at it.
+2. Bump the version. Then run the full verification: `php artisan migrate:fresh --seed`, `php artisan test`, `bin/check-layers`, `vendor/bin/pint --test`, `vendor/bin/psalm --taint-analysis`, `composer audit`, and a manual smoke test. The smoke test should cover login, a permission-gated admin page, and `AUTH_DISABLED`.
 
 This verification pass matters more than it sounds. It is exactly how the unparenthesized-ternary bug in the roles view was caught in the first place. A version bump is exactly the kind of change that can bring back a bug like it, silently.
 
@@ -47,6 +46,7 @@ This template does not propagate updates to apps that have already forked from i
 | [`docs/claude/ui.md`](docs/claude/ui.md) | CDN Tailwind and Alpine, no build step, semantic colour tokens |
 | [`docs/claude/deployment.md`](docs/claude/deployment.md) | Shared-hosting deploy steps, `.env` discipline, deploy scripts |
 | [`docs/claude/testing.md`](docs/claude/testing.md) | PHPUnit conventions, coverage checklists, and the validation/mocking rules that keep tests free of a database |
+| [`docs/claude/ci.md`](docs/claude/ci.md) | GitHub Actions workflow: tests, layering, style (Pint), taint analysis (Psalm), and `composer audit` |
 
 ## Settled going in
 

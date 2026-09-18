@@ -47,4 +47,4 @@ This approach keeps every check mockable, and consistent with the layered archit
 
 ## Layering Enforcement
 
-Run `bin/check-layers` as part of the "done" checklist, for any change that touches controllers, services, or repositories. See `@docs/claude/architecture.md`. This script is a local script, not a CI job, since shared hosting has no CI. It only catches drift if you actually run it.
+Run `bin/check-layers` as part of the "done" checklist, for any change that touches controllers, services, or repositories. See `@docs/claude/architecture.md`. GitHub Actions also runs this script on every push and pull request, so drift missed locally still gets caught before merge. See `@docs/claude/ci.md`.

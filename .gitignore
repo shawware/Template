@@ -11,6 +11,7 @@
 /.idea
 /.nova
 /.phpunit.cache
+/.psalm-cache
 /.vscode
 /.zed
 /auth.json

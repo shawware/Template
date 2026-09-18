@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo, pdo_sqlite, mbstring
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Run tests
+        run: php artisan test
+
+      - name: Check layering rules
+        run: bin/check-layers
+
+      - name: Code style check
+        run: vendor/bin/pint --test
+
+      # Static analysis (taint analysis for security) is temporarily disabled.
+      # vimeo/psalm 6.17 crashes parsing Laravel's nested conditional-return
+      # docblocks (e.g. config()/cache() in Illuminate\Foundation\helpers.php).
+      # The fix (psalm/plugin-laravel 4.x) needs psalm 7, still in beta.
+      # See docs/claude/ci.md.
+      # - name: Static analysis (taint analysis for security)
+      #   run: vendor/bin/psalm --taint-analysis
+
+      - name: Audit dependencies for known vulnerabilities
+        run: composer audit
